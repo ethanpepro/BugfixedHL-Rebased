@@ -13,6 +13,8 @@ set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 # Disable RPATH
 set( CMAKE_SKIP_BUILD_RPATH TRUE )
 
+set( GAME_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}" CACHE PATH "Path to a valid Half-Life installation." )
+
 #-----------------------------------------------------------------
 # CMake modules
 #-----------------------------------------------------------------
@@ -639,6 +641,16 @@ endif()
 
 create_source_groups( "${CMAKE_SOURCE_DIR}" )
 clear_sources()
+
+install(TARGETS client
+	LIBRARY DESTINATION "${GAME_DIRECTORY}/${CMAKE_PROJECT_NAME}/cl_dlls"
+	RUNTIME DESTINATION "${GAME_DIRECTORY}/${CMAKE_PROJECT_NAME}/cl_dlls")
+
+install(TARGETS hl
+	LIBRARY DESTINATION "${GAME_DIRECTORY}/${CMAKE_PROJECT_NAME}/dlls"
+	RUNTIME DESTINATION "${GAME_DIRECTORY}/${CMAKE_PROJECT_NAME}/dlls")
+
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/gamedir/ DESTINATION ${GAME_DIRECTORY}/${CMAKE_PROJECT_NAME} PATTERN .DS_Store EXCLUDE)
 
 #-----------------------------------------------------------------
 # Tests

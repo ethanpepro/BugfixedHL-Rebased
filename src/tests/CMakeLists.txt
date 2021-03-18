@@ -56,7 +56,7 @@ if( BUILD_TESTING )
 		semver
 	)
 	
-	if( PLATFORM_LINUX )
+	if( PLATFORM_UNIX )
 		target_link_libraries( test_client PRIVATE dl )
 	endif()
 
@@ -101,6 +101,9 @@ if( BUILD_TESTING )
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/workdir"
 	)
 
-	set_tests_properties( client server PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=.:$ENV{LD_LIBRARY_PATH}")
-
+	if( PLATFORM_UNIX )
+		set_tests_properties( client server PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=.:$ENV{LD_LIBRARY_PATH}")
+	elseif( PLATFORM_MACOS )
+		set_tests_properties( client server PROPERTIES ENVIRONMENT "DYLD_LIBRARY_PATH=.:$ENV{DYLD_LIBRARY_PATH}")
+	endif()
 endif()
