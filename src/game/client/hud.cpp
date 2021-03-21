@@ -43,12 +43,6 @@ extern "C"
 #include "demo_api.h"
 #include "cl_voice_status.h"
 #include "bhlcfg.h"
-#include "results.h"
-
-#if USE_UPDATER
-#include "updater/update_checker.h"
-#include "updater/update_installer.h"
-#endif
 
 // HUD Elements
 #include "hud/ammo.h"
@@ -72,19 +66,6 @@ extern "C"
 #include "hud/voice_status_self.h"
 #include "hud/speedometer.h"
 #include "hud/timer.h"
-
-// Adrenaline Gamer HUD Elements
-#include "hud/ag/ag_countdown.h"
-#include "hud/ag/ag_ctf.h"
-#include "hud/ag/ag_global.h"
-#include "hud/ag/ag_location.h"
-#include "hud/ag/ag_longjump.h"
-#include "hud/ag/ag_nextmap.h"
-#include "hud/ag/ag_playerid.h"
-#include "hud/ag/ag_settings.h"
-#include "hud/ag/ag_sudden_death.h"
-#include "hud/ag/ag_timeout.h"
-#include "hud/ag/ag_vote.h"
 
 extern cvar_t *cl_lw;
 
@@ -173,10 +154,6 @@ void CHud::Init(void)
 	// Set player info IDs
 	for (int i = 1; i < MAX_PLAYERS; i++)
 		CPlayerInfo::m_sPlayerInfo[i].m_iIndex = i;
-
-	// Check for AG
-	m_bIsAg = !strcmp(gEngfuncs.pfnGetGameDirectory(), "ag");
-	PM_SetIsAG(m_bIsAg);
 
 	HookHudMessage<&CHud::MsgFunc_Logo>("Logo");
 	HookHudMessage<&CHud::MsgFunc_ResetHUD>("ResetHUD");
@@ -274,19 +251,6 @@ void CHud::Init(void)
 
 	ClientVoiceMgr_Init();
 
-	// Create AG HUD elements
-	RegisterHudElem<AgHudGlobal>();
-	RegisterHudElem<AgHudCountdown>();
-	RegisterHudElem<AgHudCTF>();
-	RegisterHudElem<AgHudLocation>();
-	RegisterHudElem<AgHudLongjump>();
-	RegisterHudElem<AgHudNextmap>();
-	RegisterHudElem<AgHudPlayerId>();
-	RegisterHudElem<AgHudSettings>();
-	RegisterHudElem<AgHudSuddenDeath>();
-	RegisterHudElem<AgHudTimeout>();
-	RegisterHudElem<AgHudVote>();
-
 	// Init HUD elements
 	for (CHudElem *i : m_HudList)
 		i->Init();
@@ -298,12 +262,6 @@ void CHud::Init(void)
 	g_pViewport->ReloadLayout();
 
 	bhlcfg::Init();
-	CResults::Get().Init();
-
-#if USE_UPDATER
-	CHttpClient::Get();
-	CUpdateChecker::Get().Init();
-#endif
 
 	UpdateSupportsCvar();
 }
@@ -381,16 +339,13 @@ void CHud::VidInit(void)
 
 			// Add AG CTF sprites on non-AG clients
 			// AG has them in hud.txt
-			if (!IsAG())
-			{
-				AddSprite(client_sprite_t { "item_flag_team1", "ag_ctf", 0, 640, wrect_t { 120, 160, 0, 40 } });
-				AddSprite(client_sprite_t { "item_flag_team2", "ag_ctf", 0, 640, wrect_t { 120, 160, 0, 40 } });
-				AddSprite(client_sprite_t { "icon_ctf_home", "ag_ctf", 0, 640, wrect_t { 0, 40, 0, 40 } });
-				AddSprite(client_sprite_t { "icon_ctf_stolen", "ag_ctf", 0, 640, wrect_t { 40, 80, 0, 40 } });
-				AddSprite(client_sprite_t { "icon_ctf_lost", "ag_ctf", 0, 640, wrect_t { 80, 120, 0, 40 } });
-				AddSprite(client_sprite_t { "icon_ctf_carry", "ag_ctf", 0, 640, wrect_t { 120, 160, 0, 40 } });
-				AddSprite(client_sprite_t { "icon_ctf_score", "ag_ctf_score", 0, 640, wrect_t { 0, 16, 0, 16 } });
-			}
+			AddSprite(client_sprite_t { "item_flag_team1", "ag_ctf", 0, 640, wrect_t { 120, 160, 0, 40 } });
+			AddSprite(client_sprite_t { "item_flag_team2", "ag_ctf", 0, 640, wrect_t { 120, 160, 0, 40 } });
+			AddSprite(client_sprite_t { "icon_ctf_home", "ag_ctf", 0, 640, wrect_t { 0, 40, 0, 40 } });
+			AddSprite(client_sprite_t { "icon_ctf_stolen", "ag_ctf", 0, 640, wrect_t { 40, 80, 0, 40 } });
+			AddSprite(client_sprite_t { "icon_ctf_lost", "ag_ctf", 0, 640, wrect_t { 80, 120, 0, 40 } });
+			AddSprite(client_sprite_t { "icon_ctf_carry", "ag_ctf", 0, 640, wrect_t { 120, 160, 0, 40 } });
+			AddSprite(client_sprite_t { "icon_ctf_score", "ag_ctf_score", 0, 640, wrect_t { 0, 16, 0, 16 } });
 		}
 	}
 	else
@@ -434,13 +389,6 @@ void CHud::Frame(double time)
 	CHudVoiceStatus::Get()->RunFrame(time);
 	g_pViewport->GetAllPlayersInfo();
 	CTeamInfo::UpdateAllTeams();
-	CResults::Get().Frame();
-
-#if USE_UPDATER
-	CHttpClient::Get().RunFrame();
-	CUpdateChecker::Get().RunFrame();
-	CUpdateInstaller::Get().RunFrame();
-#endif
 
 	// Update aghl_supports
 	if (cl_enable_html_motd.GetBool() != m_bIsHTMLEnabled)
@@ -459,10 +407,6 @@ void CHud::Frame(double time)
 
 void CHud::Shutdown()
 {
-#if USE_UPDATER
-	CUpdateInstaller::Get().Shutdown();
-	CHttpClient::Get().Shutdown();
-#endif
 	bhlcfg::Shutdown();
 	ClientVoiceMgr_Shutdown();
 	colorpicker::gTexMgr.Shutdown();
@@ -486,11 +430,6 @@ void CHud::ApplyViewportSchemeSettings(vgui2::IScheme *pScheme)
 	}
 
 	vgui2::Label::SetDefaultColorCodeArray(m_ColorCodeColors);
-}
-
-bool CHud::IsAG()
-{
-	return m_bIsAg;
 }
 
 // GetSpriteIndex()

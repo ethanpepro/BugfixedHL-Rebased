@@ -24,7 +24,6 @@
 #include "cl_util.h"
 #include "scores.h"
 #include "vgui/client_viewport.h"
-#include "hud/ag/ag_global.h"
 
 ConVar hud_scores("hud_scores", "0", FCVAR_BHL_ARCHIVE, "Maximum number of lines for HUD scoreboard, 0 to disable");
 ConVar hud_scores_pos("hud_scores_pos", "30 50", FCVAR_BHL_ARCHIVE, "Position of HUD scoreboard, 'x y' in pixels");
@@ -56,28 +55,6 @@ void CHudScores::Draw(float flTime)
 	{
 		Update();
 		m_flScoreBoardLastUpdated = gHUD.m_flTime + 0.5;
-	}
-
-	int xpos, ypos;
-	xpos = 30;
-	ypos = 50;
-	sscanf(hud_scores_pos.GetString(), "%i %i", &xpos, &ypos);
-
-	for (int iLine = 0; iLine < m_iLines && iLine < hud_scores.GetInt(); iLine++)
-	{
-		HudScoresData &data = m_ScoresData[iLine];
-
-		int r, g, b;
-		r = data.color.r();
-		g = data.color.g();
-		b = data.color.b();
-		FillRGBA(xpos - 10, ypos + 2, m_iOverLay, gHUD.m_scrinfo.iCharHeight * 0.9, r, g, b, gHUD.m_Teamplay ? 20 : 10);
-
-		ScaleColors(r, g, b, 135);
-
-		const int ixposnew = AgDrawHudString(xpos, ypos, ScreenWidth, data.wszScore, r, g, b);
-		m_iOverLay = max(ixposnew - xpos + 20, m_iOverLay);
-		ypos += gHUD.m_scrinfo.iCharHeight * 0.9;
 	}
 }
 

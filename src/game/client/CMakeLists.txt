@@ -47,8 +47,6 @@ add_sources(
 	net.h
 	player_info.cpp
 	player_info.h
-	results.cpp
-	results.h
 	sdl_rt.cpp
 	sdl_rt.h
 	studio_util.cpp
@@ -104,7 +102,3 @@ add_subdirectory( gameui )
 add_subdirectory( hl )
 add_subdirectory( hud )
 add_subdirectory( vgui )
-
-if( USE_UPDATER )
-	add_subdirectory( updater )
-endif()

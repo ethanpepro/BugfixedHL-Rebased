@@ -1483,7 +1483,7 @@ void V_CalcSpectatorRefdef(struct ref_params_s *pparams)
 		}
 
 		// predict missing client data and set weapon model ( in HLTV mode or inset in eye mode or in AG )
-		if (gEngfuncs.IsSpectateOnly() || gHUD.IsAG())
+		if (gEngfuncs.IsSpectateOnly())
 		{
 			V_GetInEyePos(g_iUser2, pparams->simorg, pparams->cl_viewangles);
 

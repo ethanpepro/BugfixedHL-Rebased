@@ -25,10 +25,6 @@ extern "C"
 
 #include <cstring>
 
-#if HAS_STD_FILESYSTEM
-#include <filesystem>
-#endif
-
 #include <tier1/interface.h>
 #include <cl_dll/IGameClientExports.h>
 #include "hud.h"
@@ -52,61 +48,6 @@ void InitInput(void);
 void ShutdownInput();
 void EV_HookEvents(void);
 void IN_Commands(void);
-
-/**
- * Checks that game is launched with working directory set to engine path.
- */
-void CheckWorkingDirectory()
-{
-#if HAS_STD_FILESYSTEM
-	namespace fs = std::filesystem;
-
-	try
-	{
-		char buf[MAX_PATH];
-		gEngfuncs.COM_ExpandFilename("liblist.gam", buf, sizeof(buf));
-		fs::path liblistPath = fs::u8path(buf);
-		if (liblistPath.empty())
-			throw std::logic_error("liblist.gam not found: " + liblistPath.u8string());
-
-		if (!liblistPath.has_relative_path())
-			throw std::logic_error("liblist.gam has no parent path: " + liblistPath.u8string());
-
-		fs::path enginePath = liblistPath.parent_path().parent_path();
-		if (enginePath.empty())
-			throw std::logic_error("enginePath is empty");
-
-		enginePath = fs::canonical(enginePath);
-		fs::path workdir = fs::canonical(fs::current_path());
-
-		if (enginePath != workdir)
-		{
-			char buf[1024];
-			snprintf(buf, sizeof(buf),
-			    "Game was launched with incorrect working directory.\n\n"
-			    "Engine directory:\n%s\n\n"
-			    "Working directory:\n%s\n\n"
-			    "Please restart the game with correct working directory.\n",
-			    enginePath.u8string().c_str(), workdir.u8string().c_str());
-
-			GetSDL()->ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Invalid launch parameters", buf);
-			exit(-1);
-		}
-	}
-	catch (const std::exception &e)
-	{
-		char buf[1024];
-		snprintf(buf, sizeof(buf),
-		    "An unexpected error has occured while checking working directory.\n\n"
-		    "%s\n\n"
-		    "Please report this error on GitHub.\n"
-		    "Game will continue launching but may work incorrectly.",
-		    e.what());
-
-		GetSDL()->ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Internal error", buf);
-	}
-#endif
-}
 
 /*
 ================================
@@ -206,7 +147,6 @@ int CL_DLLEXPORT Initialize(cl_enginefunc_t *pEnginefuncs, int iVersion)
 	CvarSystem::RegisterCvars();
 	EV_HookEvents();
 	GetSDL()->Init();
-	CheckWorkingDirectory();
 
 	// Note 10.07.2020
 	// There is something odd with IParticleMan on Linux.

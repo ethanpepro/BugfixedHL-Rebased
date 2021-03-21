@@ -119,11 +119,6 @@ public:
 	void Shutdown();
 	void ApplyViewportSchemeSettings(vgui2::IScheme *pScheme);
 
-	/**
-	 * Returns whether DLL is installed onto AG mod.
-	 */
-	bool IsAG();
-
 	//-----------------------------------------------------
 	// HUD Updating (hud_redraw.cpp, hud_update.cpp)
 	//-----------------------------------------------------
@@ -249,7 +244,6 @@ private:
 
 	ColorCodeAction m_ColorCodeAction;
 
-	bool m_bIsAg = false;
 	bool m_bIsHTMLEnabled = false;
 	int m_iFrameCount = 0;
 

@@ -15,10 +15,6 @@
 #include "options_about.h"
 #include "cvar_check_button.h"
 
-#if USE_UPDATER
-#include "updater/update_checker.h"
-#endif
-
 class COptionsOSSCreditsDialog : public vgui2::Frame
 {
 public:
@@ -110,12 +106,7 @@ CAboutSubOptions::CAboutSubOptions(vgui2::Panel *parent)
 	m_pAghlLink = new vgui2::URLLabel(this, "AghlLink", "#BHL_AdvOptions_About_AGHL", "URL goes here");
 	m_pOSSCredits = new COptionsURLButton(this, "OSSCredits", "#BHL_AdvOptions_About_OSSCredits");
 
-#if USE_UPDATER
-	m_pAutoCheck = new CCvarCheckButton(this, "AutoCheck", "#BHL_AdvOptions_About_AutoCheck", "cl_check_for_updates");
-	m_GameVer = CUpdateChecker::Get().GetCurVersion();
-#else
 	m_GameVer = CGameVersion(APP_VERSION);
-#endif
 
 	LoadControlSettings(VGUI2_ROOT_DIR "resource/options/AboutSubOptions.res");
 }
@@ -154,28 +145,17 @@ void CAboutSubOptions::PerformLayout()
 
 void CAboutSubOptions::OnCommand(const char *pCmd)
 {
-	if (!strcmp(pCmd, "CheckUpd"))
-	{
-#if USE_UPDATER
-		CUpdateChecker::Get().CheckForUpdates();
-#endif
-	}
-	else
-		BaseClass::OnCommand(pCmd);
+	BaseClass::OnCommand(pCmd);
 }
 
 void CAboutSubOptions::OnResetData()
 {
-#if USE_UPDATER
-	m_pAutoCheck->ResetData();
-#endif
+	
 }
 
 void CAboutSubOptions::OnApplyChanges()
 {
-#if USE_UPDATER
-	m_pAutoCheck->ApplyChanges();
-#endif
+	
 }
 
 void CAboutSubOptions::UpdateControls()
@@ -215,49 +195,10 @@ void CAboutSubOptions::UpdateControls()
 		g_pVGuiLocalize->ConvertANSIToUnicode(gameVer.c_str(), wbuf, sizeof(wbuf));
 		m_pVerLabel->SetText(wbuf);
 	}
-
-#if !USE_UPDATER
+	
 	m_pLatestVerLabel->SetText("#BHL_AdvOptions_About_NoUpdater");
 	m_pUpdateLabel->SetVisible(false);
 	m_pUpdate2Label->SetVisible(false);
 	m_pCheckUpdatesButton->SetEnabled(false);
 	m_pChangelogButton->SetEnabled(false);
-#else
-	m_pCheckUpdatesButton->SetEnabled(true);
-
-	CGameVersion latestVer = CUpdateChecker::Get().GetLatestVersion();
-	if (latestVer.IsValid())
-	{
-		snprintf(buf, sizeof(buf), "%d.%d.%d", latestVer.GetMajor(), latestVer.GetMinor(), latestVer.GetPatch());
-		std::string strVer = buf;
-		if (latestVer.GetTag(buf, sizeof(buf)))
-		{
-			strVer += "-";
-			strVer += buf;
-		}
-
-		g_pVGuiLocalize->ConvertANSIToUnicode(strVer.c_str(), wbuf, sizeof(wbuf));
-		m_pLatestVerLabel->SetText(wbuf);
-
-		if (latestVer > m_GameVer)
-		{
-			m_pUpdateLabel->SetVisible(true);
-			m_pUpdate2Label->SetVisible(true);
-			m_pChangelogButton->SetEnabled(true);
-		}
-		else
-		{
-			m_pUpdateLabel->SetVisible(false);
-			m_pUpdate2Label->SetVisible(false);
-			m_pChangelogButton->SetEnabled(false);
-		}
-	}
-	else
-	{
-		m_pLatestVerLabel->SetText("#BHL_AdvOptions_About_Unknown");
-		m_pUpdateLabel->SetVisible(false);
-		m_pUpdate2Label->SetVisible(false);
-		m_pChangelogButton->SetEnabled(false);
-	}
-#endif
 }

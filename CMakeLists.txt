@@ -59,12 +59,6 @@ include( PlatformInfo )
 include( CTest )
 
 #-----------------------------------------------------------------
-# Build options
-#-----------------------------------------------------------------
-option( AUTO_DEPLOY		"Whether to automatically deploy to deploy paths" )
-option( USE_UPDATER		"Enable update checked and downloader" )
-
-#-----------------------------------------------------------------
 # Compiler checks
 #-----------------------------------------------------------------
 if( NOT CMAKE_SIZEOF_VOID_P EQUAL 4 )
@@ -288,28 +282,6 @@ file( MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/generated" )
 configure_file( "src/common/appversion.h.in" "${CMAKE_BINARY_DIR}/generated/appversion.h" )
 
 #-----------------------------------------------------------------
-# Autodeploy macro
-#-----------------------------------------------------------------
-if( AUTO_DEPLOY )
-	macro( add_auto_deploy TARGET_NAME PUBLISH_PATHS_FILE )
-		if ( WIN32 )
-			add_custom_command( TARGET ${TARGET_NAME}
-				POST_BUILD
-				COMMAND ${CMAKE_SOURCE_DIR}/scripts/DeployLibs.bat "${CMAKE_BINARY_DIR}\\${PUBLISH_PATHS_FILE}" "$<TARGET_FILE:${TARGET_NAME}>" "$<TARGET_PDB_FILE:${TARGET_NAME}>"
-			)
-		else()
-			add_custom_command( TARGET ${TARGET_NAME}
-				POST_BUILD
-				COMMAND ${CMAKE_SOURCE_DIR}/scripts/DeployLibs.sh "${CMAKE_BINARY_DIR}/${PUBLISH_PATHS_FILE}" "$<TARGET_FILE:${TARGET_NAME}>"
-			)
-		endif()
-	endmacro()
-else()
-	macro( add_auto_deploy )
-	endmacro()
-endif()
-
-#-----------------------------------------------------------------
 # Libraries
 #-----------------------------------------------------------------
 set( THREADS_PREFER_PTHREAD_FLAG ON )
@@ -366,77 +338,6 @@ set( SOURCE_SDK_GFX_PATH "ui/gfx/vgui" )
 add_subdirectory( source_sdk )
 
 #-----------------------------------------------------------------
-# Updater
-#-----------------------------------------------------------------
-set( UPDATER_LIBS "" )
-set( UPDATER_DEFINES USE_UPDATER=0 )
-
-if( USE_UPDATER )
-	if( NOT HAS_STD_FILESYSTEM )
-		message( FATAL_ERROR "Updater requires support for std::filesystem." )
-	endif()
-
-	option( CURL_STATICLIB "Enable if cURL was built as a static library" 0 )
-	option( CURL_REPO_LIBS "Use static curl from external/curl" 1 )
-
-	if( WIN32 )
-		if( CURL_REPO_LIBS )
-			set( CURL_STATICLIB 1 CACHE BOOL "" FORCE )
-			set( CURL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/curl/include" CACHE PATH "" FORCE )
-			set( CURL_LIBRARY "" CACHE FILEPATH "" FORCE )
-			set( CURL_LIBRARY_DEBUG "${CMAKE_CURRENT_SOURCE_DIR}/external/curl/lib/libcurl_static_debug.lib" CACHE FILEPATH "" FORCE )
-			set( CURL_LIBRARY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/external/curl/lib/libcurl_static.lib" CACHE FILEPATH "" FORCE )
-		endif()
-		
-		find_package( libzip REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/external/libzip/lib/cmake" NO_DEFAULT_PATH )
-	else()
-		if( CURL_REPO_LIBS )
-			set( CURL_STATICLIB 1 CACHE BOOL "" FORCE )
-			set( CURL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/curl_linux/include" CACHE PATH "" FORCE )
-			set( CURL_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/external/curl_linux/lib/libcurl.a" CACHE FILEPATH "" FORCE )
-		endif()
-
-		find_package( ZLIB REQUIRED )
-		find_package( OpenSSL REQUIRED )
-		find_package( libzip REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/external/libzip_linux/lib/cmake" NO_DEFAULT_PATH )
-
-		set( UPDATER_LIBS OpenSSL::Crypto OpenSSL::SSL OpenSSL::Crypto OpenSSL::SSL )
-	endif()
-
-	find_package( CURL MODULE REQUIRED )
-	set( UPDATER_LIBS
-		${CURL_LIBRARIES}
-		${UPDATER_LIBS}
-		nlohmann_json
-		libzip::zip
-	)
-
-	set( UPDATER_INCLUDE_PATHS
-		${CURL_INCLUDE_DIRS}
-	)
-	
-	set( UPDATER_DEFINES
-		USE_UPDATER=1
-	)
-	
-	if( CURL_STATICLIB )
-		set( UPDATER_DEFINES
-			${UPDATER_DEFINES}
-			CURL_STATICLIB=1
-		)
-		if( WIN32 )
-			set( UPDATER_LIBS
-				${UPDATER_LIBS}
-				wldap32.lib
-				Crypt32.lib
-				Ws2_32.lib
-			)
-		endif()
-	endif()
-	
-endif()
-
-#-----------------------------------------------------------------
 # Client library
 #-----------------------------------------------------------------
 # Add in the shared sources
@@ -451,19 +352,16 @@ add_subdirectory( src/game/client )
 preprocess_sources()
 add_library( client SHARED ${PREP_SRCS} )
 check_winxp_support( client )
-add_auto_deploy( client PublishPathClient.txt )
 
 target_include_directories( client PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/game/client
 	${GAME_COMMON_INCLUDE_PATHS}
 	${SOURCE_SDK_INCLUDE_PATHS}
-	${UPDATER_INCLUDE_PATHS}
 )
 
 target_compile_definitions( client PRIVATE
 	${GAME_COMMON_DEFINES}
 	${SOURCE_SDK_DEFINES}
-	${UPDATER_DEFINES}
 	VERSION_SAFE_STEAM_API_INTERFACES
 	CLIENT_DLL
 )
@@ -482,7 +380,6 @@ if( WIN32 )
 		DInput
 		DXGUID
 		Dbghelp
-		stackwalker
     )
 
 	target_include_directories( client PRIVATE
@@ -500,10 +397,8 @@ endif()
 target_link_libraries( client
 	${GAME_COMMON_LIBS}
 	${SOURCE_SDK_LIBS}
-	${UPDATER_LIBS}
 	pcre
 	semver
-	nlohmann_json
 	${CLIENT_PLAT_LIBS}
 	Threads::Threads
 )
@@ -535,7 +430,6 @@ add_subdirectory( src/game/server )
 preprocess_sources()
 add_library( hl SHARED ${PREP_SRCS} )
 check_winxp_support( hl )
-add_auto_deploy( hl PublishPathServer.txt )
 
 target_include_directories( hl PRIVATE
 	#${CMAKE_CURRENT_SOURCE_DIR}/src/game/server	# Already in GAME_COMMON_INCLUDE_PATHS
@@ -592,7 +486,6 @@ add_subdirectory( src/bugfixedapi_amxx )
 preprocess_sources()
 add_library( bugfixedapi_amxx SHARED ${PREP_SRCS} )
 check_winxp_support( bugfixedapi_amxx )
-add_auto_deploy( bugfixedapi_amxx PublishPathAMXX.txt )
 
 target_include_directories( bugfixedapi_amxx PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/src/bugfixedapi_amxx

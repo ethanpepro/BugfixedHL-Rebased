@@ -47,5 +47,3 @@ add_sources(
 	voice_status_self.cpp
 	voice_status_self.h
 )
-
-add_subdirectory( ag )

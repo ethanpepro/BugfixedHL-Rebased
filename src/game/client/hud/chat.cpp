@@ -21,8 +21,6 @@
 #include "chat.h"
 #include "parsemsg.h"
 #include "cl_voice_status.h"
-#include "results.h"
-#include "hud/ag/ag_location.h"
 #include "gameui/gameui_viewport.h"
 
 ConVar hud_saytext("hud_saytext", "1", FCVAR_BHL_ARCHIVE, "Enable/disable the chat");
@@ -1162,10 +1160,7 @@ void CHudChat::ChatPrintf(int iPlayerIndex, const char *fmt, ...)
 	{
 		msg[strlen(msg) - 1] = 0;
 	}
-
-	// Substitute location
-	AgHudLocation::Get()->ParseAndEditSayString(iPlayerIndex, msg, sizeof(msg));
-
+	
 	// Strip leading \n characters ( or notify/color signifiers ) for empty string check
 	char *pmsg = msg;
 	while (*pmsg && (*pmsg == '\n' || (*pmsg > 0 && *pmsg < COLOR_MAX) || (*pmsg == '^' && *(pmsg + 1) >= '0' && *(pmsg + 1) <= '9')))
@@ -1271,9 +1266,6 @@ void CHudChat::ChatPrintf(int iPlayerIndex, const char *fmt, ...)
 		ConPrintf(m_ConsoleMsgColor, "%s %s\n", time_buf, RemoveColorCodes(pmsg));
 	else
 		ConPrintf(m_ConsoleMsgColor, "%s %s\n", time_buf, pmsg);
-
-	CResults::Get().AddLog(time_buf, true);
-	CResults::Get().AddLog(pmsg, true);
 }
 
 void CHudChatEntry::OnKeyCodeTyped(vgui2::KeyCode code)

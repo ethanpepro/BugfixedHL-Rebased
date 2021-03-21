@@ -162,7 +162,6 @@ int g_onladder = 0;
 static int s_iOnGround;
 static int s_iWaterlevel;
 static int s_bBHopCap = true;
-static int s_iIsAg = false;
 
 int PM_GetOnGround()
 {
@@ -172,11 +171,6 @@ int PM_GetOnGround()
 int PM_GetWaterLevel()
 {
 	return s_iWaterlevel;
-}
-
-void PM_SetIsAG(int state)
-{
-	s_iIsAg = state;
 }
 
 #ifdef CLIENT_DLL
@@ -2246,7 +2240,7 @@ void PM_LadderMove(physent_t *pLadder)
 		float climbSpeed = MAX_CLIMB_SPEED;
 		if (climbSpeed > pmove->maxspeed)
 			climbSpeed = pmove->maxspeed;
-		if (!s_iIsAg && (pmove->flags & FL_DUCKING))
+		if (pmove->flags & FL_DUCKING)
 			climbSpeed *= PLAYER_DUCKING_MULTIPLIER;
 
 		AngleVectors(pmove->angles, vpn, v_right, NULL);
